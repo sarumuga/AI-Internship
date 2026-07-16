@@ -1,5 +1,8 @@
 fastapi[standard]
 httpx
+langchain-text-splitters
 openai
+pinecone
+pypdf
 python-dotenv
 streamlit
