@@ -63,6 +63,23 @@ Requires `.venv` and a valid `OPENAI_API_KEY`:
 python test_all_stages.py
 ```
 
+## RAG golden-set eval
+
+Run against the live Pinecone-backed `/ask` (retrieval + generation), verified manually against known documents (`handbook`, `POL-101`).
+
+| # | Question | Expected Answer (short) | Retrieval Hit? | Faithful? | Correct? | Notes |
+|---|---|---|:---:|:---:|:---:|---|
+| 1 | How many days per week can employees work remotely? | Up to 3 days/week, with manager approval | ✅ | ✅ | ✅ | Answer matched expected almost verbatim, cited (POL-101). `sources_needed` flagged `true` despite a fully correct answer — known prompt inconsistency. |
+| 2 | What are the core hours employees must be reachable on Slack when working remotely? | 10:00–15:00 | ✅ | ✅ | ✅ | Exact match, cited (POL-101). |
+| 3 | What are the standard working hours at Northwind Robotics? | 09:00–17:30, Monday–Friday | ✅ | ✅ | ✅ | Exact match, cited (POL-101). |
+| 4 | How many annual leave days do employees get? | 28 days plus public holidays | ✅ | ✅ | ✅ | Exact match, cited (POL-101). |
+| 5 | What approval is required for fully remote work arrangements? | Director approval, reviewed every six months | ✅ | ✅ | ✅ | Exact match, cited (POL-101). |
+| 6 *(refusal test)* | What is the company's parental leave policy? | *(should refuse — not in any ingested doc)* | N/A* | ✅ | ✅ | Model correctly said "I don't have enough information to answer that." instead of guessing, even though 5 irrelevant chunks were retrieved. |
+
+\* Retrieval always returns top-5 nearest chunks regardless of relevance — there's no "correct" chunk to hit for an intentionally unanswerable question, so this is graded on whether the model correctly recognized the retrieved context was irrelevant (faithfulness), not on retrieval itself.
+
+**Summary: 6/6 correct, 6/6 faithful, 5/5 retrieval hits on answerable questions, 1/1 correct refusal.**
+
 ## Project layout
 
 ```
