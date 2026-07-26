@@ -38,7 +38,7 @@ def get_estimated_delivery(order_id: str) -> dict:
 
 shipping_agent = Agent(
     name="shipping_status_agent",
-    model=os.getenv("GEMINI_MODEL", "gemini-2.5-flash"),
+    model=os.getenv("GEMINI_MODEL", "gemini-flash-latest"),
     description="Handles shipping and delivery questions.",
     instruction="You are a shipping specialist. Use get_shipping_status and get_estimated_delivery to help customers track packages.",
     tools=[get_shipping_status, get_estimated_delivery],

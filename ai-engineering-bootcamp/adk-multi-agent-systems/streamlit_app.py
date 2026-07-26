@@ -17,12 +17,18 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from dotenv import load_dotenv
 load_dotenv()
 
+from langfuse import get_client
+from openinference.instrumentation.google_adk import GoogleADKInstrumentor
+
+langfuse = get_client()
+GoogleADKInstrumentor().instrument()
+
 from google.adk.agents import Agent
 from google.adk.runners import Runner
 from google.adk.sessions import InMemorySessionService
 from google.genai import types
 
-MODEL = "gemini-2.5-flash"
+MODEL = "gemini-flash-latest"  # gemini-2.5-flash is retired for new API keys
 
 # --- Tools ---
 
@@ -157,6 +163,7 @@ def run_agent_sync(agent, message, timeout=120):
                         trace.append({"author": author, "type": "text", "text": text})
                         if event.is_final_response():
                             final = text
+        langfuse.flush()
         return final, trace
     with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
         return pool.submit(asyncio.run, _run()).result(timeout=timeout)
@@ -221,6 +228,10 @@ with st.sidebar:
         st.success("Shipping Agent (:8001)")
     else:
         st.warning("Shipping Agent -- not running")
+    if langfuse.auth_check():
+        st.success("Langfuse Tracing")
+    else:
+        st.warning("Langfuse -- not connected")
 
 # --- Overview ---
 

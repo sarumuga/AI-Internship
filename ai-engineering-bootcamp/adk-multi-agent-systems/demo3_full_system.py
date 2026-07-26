@@ -11,6 +11,12 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+from langfuse import get_client
+from openinference.instrumentation.google_adk import GoogleADKInstrumentor
+
+langfuse = get_client()
+GoogleADKInstrumentor().instrument()
+
 from google.adk.agents import Agent
 from google.adk.agents.remote_a2a_agent import RemoteA2aAgent
 from google.adk.runners import Runner
@@ -19,7 +25,7 @@ from google.adk.tools.mcp_tool import McpToolset, StdioConnectionParams
 from google.genai import types
 from mcp.client.stdio import StdioServerParameters
 
-MODEL = "gemini-2.5-flash"
+MODEL = "gemini-flash-latest"  # gemini-2.5-flash is retired for new API keys
 
 # --- Layer 1: Technical Agent (local tools) ---
 
@@ -111,6 +117,7 @@ async def main():
         print(f"\n--- {label} ---")
         print(f"User: {query}\n")
         print(f"Agent: {await ask(root_agent, query)}\n")
+    langfuse.flush()
 
 if __name__ == "__main__":
     asyncio.run(main())

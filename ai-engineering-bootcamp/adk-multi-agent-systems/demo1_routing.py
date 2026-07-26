@@ -13,7 +13,7 @@ from google.genai import types
 
 load_dotenv()
 
-MODEL = "gemini-2.5-flash"
+MODEL = "gemini-flash-latest"  # gemini-2.5-flash is retired for new API keys
 
 # --- Tools ---
 
