@@ -9,6 +9,7 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 from openai import OpenAI
 from pydantic import BaseModel, Field, ValidationError
 
+import agent_rag
 import vector_store
 
 # Load .env from this folder so the key is found regardless of shell working directory.
@@ -289,3 +290,46 @@ def vector_store_health() -> dict:
         return vector_store.health_check()
     except Exception as exc:
         raise HTTPException(status_code=503, detail=f"Vector store unreachable: {exc}")
+
+
+class AgentRequest(BaseModel):
+    """A user goal/message for the Session 3 ADK agent."""
+
+    message: str
+
+
+class AgentStep(BaseModel):
+    """One tool call the agent made, for a compact trace -- not the full event stream."""
+
+    tool: str
+    observation: str  # truncated -- see agent_rag._truncate
+
+
+class AgentResponse(BaseModel):
+    answer: str
+    steps: list[AgentStep]
+
+
+# curl -s -X POST http://127.0.0.1:8000/agent \
+#   -H "Content-Type: application/json" \
+#   -d '{"message": "What are the key considerations for creating an AI policy?"}'
+@app.post("/agent")
+async def agent(body: AgentRequest) -> AgentResponse:
+    """Run the Session 3 ADK agent (agent_rag.capstone_rag_agent) on a user goal.
+
+    Returns only the final answer and a short tool-call trace -- never the raw event
+    stream, environment, or API keys.
+    """
+
+    if not body.message.strip():
+        raise HTTPException(status_code=400, detail="message must not be empty")
+
+    try:
+        result = await agent_rag.run_agent(body.message)
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail=f"Agent run failed: {exc}")
+
+    return AgentResponse(
+        answer=result["answer"],
+        steps=[AgentStep(**step) for step in result["steps"]],
+    )
